@@ -119,7 +119,7 @@ local function create_overlay()
 
   configure_buffer_overlay()
   overlay_winnr = vim.api.nvim_open_win(overlay_bufnr, true, {
-    col = 1,
+    col = 0,
     row = 0,
     relative = "cursor",
     width = math.max(min_width, vim.api.nvim_win_get_width(view.get_winnr()) - #M.prefix - 2),
@@ -139,7 +139,7 @@ function M.start_filtering()
 
   redraw()
   local row = require("nvim-tree.core").get_nodes_starting_line() - 1
-  local col = #M.prefix > 0 and #M.prefix - 1 or 1
+  local col = #M.prefix > 0 and #M.prefix or 0
   view.set_cursor { row, col }
   -- needs scheduling to let the cursor move before initializing the window
   vim.schedule(create_overlay)
