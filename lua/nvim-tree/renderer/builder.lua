@@ -157,7 +157,7 @@ function Builder:_build_folder(node)
     foldername = foldername .. arrow .. link_to
     foldername_hl = "NvimTreeSymlinkFolderName"
   elseif
-    vim.tbl_contains(self.special_files, node.absolute_path) or vim.tbl_contains(self.special_files, node.name)
+      vim.tbl_contains(self.special_files, node.absolute_path) or vim.tbl_contains(self.special_files, node.name)
   then
     foldername_hl = "NvimTreeSpecialFolderName"
   elseif node.open then
@@ -213,6 +213,11 @@ end
 ---@param node table
 ---@return HighlightedString[]|nil icon
 function Builder:_get_git_icons(node)
+  -- no need to show git icons along the full path
+  if node.open then
+    return nil
+  end
+
   local git_icons = git.get_icons(node)
   if git_icons and #git_icons > 0 and self.git_placement == "signcolumn" then
     table.insert(self.signs, { sign = git_icons[1].hl, lnum = self.index + 1, priority = 1 })
@@ -258,9 +263,9 @@ function Builder:_get_highlight_override(node, unloaded_bufnr)
 
   -- opened file
   if
-    self.highlight_opened_files
-    and vim.fn.bufloaded(node.absolute_path) > 0
-    and vim.fn.bufnr(node.absolute_path) ~= unloaded_bufnr
+      self.highlight_opened_files
+      and vim.fn.bufloaded(node.absolute_path) > 0
+      and vim.fn.bufnr(node.absolute_path) ~= unloaded_bufnr
   then
     if self.highlight_opened_files == "all" or self.highlight_opened_files == "name" then
       name_hl = "NvimTreeOpenedFile"
