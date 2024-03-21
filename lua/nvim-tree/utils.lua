@@ -87,13 +87,12 @@ M.path_separator = path_separator
 -- @param fn    function(node): boolean
 function M.find_node(nodes, fn)
   local node, i = Iterator.builder(nodes)
-    :matcher(fn)
-    :recursor(function(node)
-      return node.group_next and { node.group_next } or (node.open and #node.nodes > 0 and node.nodes)
-    end)
-    :iterate()
+      :matcher(fn)
+      :recursor(function(node)
+        return node.group_next and { node.group_next } or (node.open and #node.nodes > 0 and node.nodes)
+      end)
+      :iterate()
   i = require("nvim-tree.view").is_root_folder_visible() and i or i - 1
-  i = require("nvim-tree.live-filter").filter and i + 1 or i
   return node, i
 end
 
@@ -112,19 +111,19 @@ function M.get_node_from_path(path)
   end
 
   return Iterator.builder(explorer.nodes)
-    :hidden()
-    :matcher(function(node)
-      return node.absolute_path == path or node.link_to == path
-    end)
-    :recursor(function(node)
-      if node.group_next then
-        return { node.group_next }
-      end
-      if node.nodes then
-        return node.nodes
-      end
-    end)
-    :iterate()
+      :hidden()
+      :matcher(function(node)
+        return node.absolute_path == path or node.link_to == path
+      end)
+      :recursor(function(node)
+        if node.group_next then
+          return { node.group_next }
+        end
+        if node.nodes then
+          return node.nodes
+        end
+      end)
+      :iterate()
 end
 
 -- get the highest parent of grouped nodes
@@ -145,17 +144,17 @@ function M.get_nodes_by_line(nodes_all, line_start)
   local line = line_start
 
   Iterator.builder(nodes_all)
-    :applier(function(node)
-      if node.group_next then
-        return
-      end
-      nodes_by_line[line] = node
-      line = line + 1
-    end)
-    :recursor(function(node)
-      return node.group_next and { node.group_next } or (node.open and #node.nodes > 0 and node.nodes)
-    end)
-    :iterate()
+      :applier(function(node)
+        if node.group_next then
+          return
+        end
+        nodes_by_line[line] = node
+        line = line + 1
+      end)
+      :recursor(function(node)
+        return node.group_next and { node.group_next } or (node.open and #node.nodes > 0 and node.nodes)
+      end)
+      :iterate()
 
   return nodes_by_line
 end

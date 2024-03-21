@@ -61,16 +61,12 @@ local function filtered_nodes()
 end
 
 local function select(node_)
-  local core = require "nvim-tree.core"
-  local nodes = utils.get_nodes_by_line(core.get_explorer().nodes, core.get_nodes_starting_line())
+  local _, line = utils.find_node(require("nvim-tree.core").get_explorer().nodes, function(node)
+    return node.absolute_path == node_.absolute_path
+  end)
 
-  for line, node in pairs(nodes) do
-    if node == node_ then
-      view.set_cursor { line, 0 }
-      vim.cmd "redraw"
-      return
-    end
-  end
+  view.set_cursor { line + 1, 0 }
+  vim.cmd "redraw"
 end
 
 local function find_default_node()

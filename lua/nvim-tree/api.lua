@@ -94,7 +94,7 @@ Api.tree.find_file = wrap(require("nvim-tree.actions.tree.find-file").fn)
 
 Api.tree.search_node = wrap(require("nvim-tree.actions.finders.search-node").fn)
 
-Api.tree.collapse_all = wrap(require("nvim-tree.actions.tree-modifiers.collapse-all").fn)
+Api.tree.collapse_all = wrap_node(require("nvim-tree.actions.tree-modifiers.collapse-all").fn)
 
 Api.tree.expand_all = wrap_node(require("nvim-tree.actions.tree-modifiers.expand-all").fn)
 

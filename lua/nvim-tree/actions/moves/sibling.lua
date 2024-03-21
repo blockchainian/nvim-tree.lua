@@ -14,22 +14,26 @@ function M.fn(direction)
     local found = false
     local parent = node.parent or core.get_explorer()
     Iterator.builder(parent.nodes)
-      :recursor(function()
-        return nil
-      end)
-      :applier(function(n)
-        first = first or n
-        last = n
-        if n.absolute_path == node.absolute_path then
-          found = true
-          return
-        end
-        prev = not found and n or prev
-        if found and not next then
-          next = n
-        end
-      end)
-      :iterate()
+        :recursor(function()
+          return nil
+        end)
+        :applier(function(n)
+          if n.absolute_path == node.absolute_path then
+            found = true
+            return
+          end
+          if n.type ~= "directory" then
+            return
+          end
+
+          first = first or n
+          last = n
+          prev = not found and n or prev
+          if found and not next then
+            next = n
+          end
+        end)
+        :iterate()
 
     local target_node
     if direction == "first" then
