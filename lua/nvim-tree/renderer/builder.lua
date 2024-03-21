@@ -44,12 +44,6 @@ function Builder:configure_picture_map(picture_map)
   return self
 end
 
-function Builder:configure_filter(filter, prefix)
-  self.filter_prefix = prefix
-  self.filter = filter
-  return self
-end
-
 function Builder:configure_opened_file_highlighting(highlight_opened_files)
   self.highlight_opened_files = highlight_opened_files
   return self
@@ -392,17 +386,7 @@ function Builder:_build_line(node, idx, num_children, unloaded_bufnr)
 end
 
 function Builder:_get_nodes_number(nodes)
-  if not self.filter then
-    return #nodes
-  end
-
-  local i = 0
-  for _, n in pairs(nodes) do
-    if not n.hidden then
-      i = i + 1
-    end
-  end
-  return i
+  return #nodes
 end
 
 function Builder:build(tree, unloaded_bufnr)
@@ -436,15 +420,6 @@ function Builder:build_header(show_header)
     self:_insert_line(root_name)
     self:_insert_highlight("NvimTreeRootFolder", 0, string.len(root_name))
     self.index = 1
-  end
-
-  if self.filter then
-    local filter_line = self.filter_prefix .. "/" .. self.filter .. "/"
-    self:_insert_line(filter_line)
-    local prefix_length = string.len(self.filter_prefix)
-    self:_insert_highlight("NvimTreeLiveFilterPrefix", 0, prefix_length)
-    self:_insert_highlight("NvimTreeLiveFilterValue", prefix_length, string.len(filter_line))
-    self.index = self.index + 1
   end
 
   return self

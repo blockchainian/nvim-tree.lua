@@ -13,17 +13,19 @@ end
 local function reset_filter(node_)
   node_ = node_ or TreeExplorer
   Iterator.builder(node_.nodes)
-    :hidden()
-    :applier(function(node)
-      node.hidden = false
-    end)
-    :iterate()
+      :hidden()
+      :applier(function(node)
+        node.hidden = false
+      end)
+      :iterate()
 end
 
 local overlay_bufnr = nil
 local overlay_winnr = nil
 
 local function remove_overlay()
+  vim.cmd "stopinsert"
+
   if view.View.float.enable and view.View.float.quit_on_focus_loss then
     -- return to normal nvim-tree float behaviour when filter window is closed
     vim.api.nvim_create_autocmd("WinLeave", {
@@ -41,15 +43,126 @@ local function remove_overlay()
   overlay_bufnr = nil
   overlay_winnr = nil
 
-  if M.filter == "" then
-    M.clear_filter()
+  M.clear_filter()
+end
+
+local function filtered_nodes()
+  local nodes = {}
+
+  Iterator.builder(TreeExplorer.nodes)
+      :applier(function(node)
+        if node.type == 'file' then
+          table.insert(nodes, node)
+        end
+      end)
+      :iterate()
+
+  return nodes
+end
+
+local function select(node_)
+  local core = require "nvim-tree.core"
+  local nodes = utils.get_nodes_by_line(core.get_explorer().nodes, core.get_nodes_starting_line())
+
+  for line, node in pairs(nodes) do
+    if node == node_ then
+      view.set_cursor { line, 0 }
+      vim.cmd "redraw"
+      return
+    end
+  end
+end
+
+local function find_default_node()
+  local current = require("nvim-tree.lib").get_node_at_cursor()
+  local nodes = filtered_nodes()
+
+  for i, node in ipairs(nodes) do
+    if current and current.absolute_path == node.absolute_path then
+      return node
+    end
+  end
+
+  return nodes[1]
+end
+
+local function find_prev_node()
+  local current = require("nvim-tree.lib").get_node_at_cursor()
+  local nodes = filtered_nodes()
+
+  for i, node in ipairs(nodes) do
+    if current.absolute_path == node.absolute_path and i > 1 then
+      return nodes[i - 1]
+    end
+  end
+
+  return nodes[#nodes]
+end
+
+local function find_next_node()
+  local current = require("nvim-tree.lib").get_node_at_cursor()
+  local nodes = filtered_nodes()
+
+  for i, node in ipairs(nodes) do
+    if current.absolute_path == node.absolute_path then
+      return nodes[i % #nodes + 1]
+    end
+  end
+
+  return nodes[1]
+end
+
+local function select_default()
+  local node = find_default_node()
+  if node then
+    select(node)
+  end
+end
+
+local function select_prev()
+  local node = find_prev_node()
+  if node then
+    select(node)
+  end
+end
+
+local function select_next()
+  local node = find_next_node()
+  if node then
+    select(node)
+  end
+end
+
+local function activate()
+  remove_overlay()
+
+  local node = require("nvim-tree.lib").get_node_at_cursor()
+
+  if not node then
+    return
+  elseif node.name == ".." then
+    require("nvim-tree.actions.root.change-dir").fn ".."
+  elseif node.nodes then
+    require("nvim-tree.lib").expand_or_collapse(node)
+  else
+    local path = node.absolute_path
+    if node.link_to and not node.nodes then
+      path = node.link_to
+    end
+    require("nvim-tree.actions.node.open-file").fn('edit', path)
   end
 end
 
 local function matches(node)
-  local path = node.absolute_path
-  local name = vim.fn.fnamemodify(path, ":t")
-  return vim.regex(M.filter):match_str(name) ~= nil
+  local patterns = vim.split(M.filter, "%s+")
+
+  for _, pattern in ipairs(patterns) do
+    if vim.regex('\\c' .. pattern):match_str(node.absolute_path) == nil then
+      return false
+    end
+  end
+
+  return true
 end
 
 function M.apply_filter(node_)
@@ -79,6 +192,7 @@ function M.apply_filter(node_)
   end
 
   iterate(node_ or TreeExplorer)
+  select_default()
 end
 
 local function record_char()
@@ -96,12 +210,10 @@ local function configure_buffer_overlay()
     on_lines = record_char,
   })
 
-  vim.api.nvim_create_autocmd("InsertLeave", {
-    callback = remove_overlay,
-    once = true,
-  })
-
-  vim.api.nvim_buf_set_keymap(overlay_bufnr, "i", "<CR>", "<cmd>stopinsert<CR>", {})
+  vim.keymap.set('i', '<C-J>', select_next, { silent = true, buffer = overlay_bufnr })
+  vim.keymap.set('i', '<C-K>', select_prev, { silent = true, buffer = overlay_bufnr })
+  vim.keymap.set('i', '<CR>', activate, { silent = true, buffer = overlay_bufnr })
+  vim.keymap.set('i', '<ESC>', remove_overlay, { silent = true, buffer = overlay_bufnr })
 end
 
 local function create_overlay()
@@ -121,8 +233,8 @@ local function create_overlay()
   overlay_winnr = vim.api.nvim_open_win(overlay_bufnr, true, {
     col = 0,
     row = 0,
-    relative = "cursor",
-    width = math.max(min_width, vim.api.nvim_win_get_width(view.get_winnr()) - #M.prefix - 2),
+    relative = "win",
+    width = math.max(min_width, vim.api.nvim_win_get_width(view.get_winnr()) - #M.prefix),
     height = 1,
     border = "none",
     style = "minimal",
@@ -138,10 +250,6 @@ function M.start_filtering()
   M.filter = M.filter or ""
 
   redraw()
-  local row = require("nvim-tree.core").get_nodes_starting_line() - 1
-  local col = #M.prefix > 0 and #M.prefix or 0
-  view.set_cursor { row, col }
-  -- needs scheduling to let the cursor move before initializing the window
   vim.schedule(create_overlay)
 end
 
