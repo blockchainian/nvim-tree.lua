@@ -11,10 +11,11 @@ end
 
 local function get_folder_icon_default(node, has_children)
   local is_symlink = node.links_to ~= nil
+  local is_node_modules = node.name == "node_modules" and has_children
   local n
-  if is_symlink and node.open then
+  if (is_symlink or is_node_modules) and node.open then
     n = M.config.glyphs.folder.symlink_open
-  elseif is_symlink then
+  elseif (is_symlink or is_node_modules) then
     n = M.config.glyphs.folder.symlink
   elseif node.open then
     if has_children then

@@ -32,16 +32,16 @@ local function folders_or_files_first(a, b)
     return
   end
 
-  if not a.nodes and b.nodes then
+  if a.nodes and a.name == "node_modules" then
+    return false
+  elseif b.nodes and b.name == "node_modules" then
+    return true
+  elseif not a.nodes and b.nodes then
     -- file <> folder
     return M.config.sort.files_first
   elseif a.nodes and not b.nodes then
     -- folder <> file
     return not M.config.sort.files_first
-  elseif a.name == "node_modules" then
-    return false
-  elseif b.name == "node_modules" then
-    return true
   end
 end
 

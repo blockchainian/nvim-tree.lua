@@ -97,7 +97,7 @@ function Builder:_insert_line(line)
 end
 
 local function get_folder_name(node)
-  local name = node.name
+  local name = node.name == "node_modules" and "" or node.name
   local next = node.group_next
   while next do
     name = name .. "/" .. next.name
