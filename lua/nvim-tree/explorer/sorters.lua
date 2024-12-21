@@ -38,6 +38,10 @@ local function folders_or_files_first(a, b)
   elseif a.nodes and not b.nodes then
     -- folder <> file
     return not M.config.sort.files_first
+  elseif a.name == "node_modules" then
+    return false
+  elseif b.name == "node_modules" then
+    return true
   end
 end
 
